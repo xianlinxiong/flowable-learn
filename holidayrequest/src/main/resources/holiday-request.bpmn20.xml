@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:flowable="http://flowable.org/bpmn"
+             typeLanguage="http://www.w3.org/2001/XMLSchema"
+             expressionLanguage="http://www.w3.org/1999/XPath"
+             targetNamespace="http://www.flowable.org/processdef">
+
+    <process id="holidayRequest" name="Holiday Request" isExecutable="true">
+        <startEvent id="startEvent"/>
+        <userTask id="approveTask" name="Approve or Reject the Request" flowable:candidateGroups="managers"/>
+        <exclusiveGateway id="decision"/>
+        <serviceTask id="externalServiceCall" name="Enter Holidays in external system" flowable:class="org.panda.demo.flowable.holidayrequest.delegate.CallExternalSystemDelegate"/>
+        <userTask id="holidayApprovedTask" name="Holiday approved" flowable:assignee="${employee}"/>
+        <endEvent id="endEvent1"/>
+        <serviceTask id="sendRejectionMail" name="Send out rejection email" flowable:class="org.panda.demo.flowable.holidayrequest.delegate.SendRejectEmailDelegate"/>
+        <endEvent id="endEvent2"/>
+        <sequenceFlow sourceRef="startEvent" targetRef="approveTask"/>
+        <sequenceFlow sourceRef="approveTask" targetRef="decision"/>
+        <sequenceFlow sourceRef="decision" targetRef="externalServiceCall">
+            <conditionExpression xsi:type="tFormalExpression">
+                <![CDATA[
+                ${approved}
+                ]]>
+            </conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow sourceRef="decision" targetRef="sendRejectionMail">
+            <conditionExpression xsi:type="tFormalExpression">
+                <![CDATA[
+                ${!approved}
+                ]]>
+            </conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow sourceRef="externalServiceCall" targetRef="holidayApprovedTask" />
+        <sequenceFlow sourceRef="holidayApprovedTask" targetRef="endEvent1" />
+        <sequenceFlow sourceRef="sendRejectionMail" targetRef="endEvent2" />
+    </process>
+</definitions>
